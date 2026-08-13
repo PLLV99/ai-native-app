@@ -1,0 +1,68 @@
+# Dependencies (install fresh in container)
+node_modules
+npm-debug.log*
+
+# Build output
+.next
+out
+build
+dist
+
+# Prisma client ที่ generate บนเครื่อง (Windows) — ห้ามหลุดเข้า image
+# stage builder รัน `pnpm prisma generate` ใน Alpine เองอยู่แล้ว
+# ถ้าไม่กันไว้ COPY . . จะเอาตัว Windows ไปทับ
+app/generated
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Environment files — ส่งผ่าน env_file ตอน runtime เท่านั้น
+.env
+.env.*
+!.env.example
+
+# IDE / Editor
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Test & coverage
+coverage
+__tests__
+*.test.ts
+*.spec.ts
+cypress
+playwright
+
+# SQLite / local DB
+*.db
+*.db-journal
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Documentation
+README.md
+*.md
+
+# Misc
+.vercel
+.prettierrc
+.eslintcache
+.claude
+example
+
+# Docker files (ไม่ต้อง copy เข้า container)
+.dockerignore
+Dockerfile
+Containerfile
+docker-compose*.yml
+podman-compose*.yml
+
+# Backup DB (ใหญ่มาก ไม่ต้องส่งเข้า build context)
+backupdb/

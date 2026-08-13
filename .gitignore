@@ -43,3 +43,13 @@ next-env.d.ts
 /app/generated/prisma
 
 cookies.txt
+
+# ยกเว้นให้ไฟล์ example หลุดขึ้น Git ได้ จะได้เป็นแม่แบบให้ทีม
+!.env.example
+!.env.template
+
+# database and docker volumes
+pgdata/
+postgres_data/
+db_data/
+docker-compose.override.yml

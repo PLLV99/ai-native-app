@@ -1,0 +1,35 @@
+networks:
+  app-network:
+    driver: bridge
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # บังคับใช้ port 8810 สำหรับ production build ใน docker
+        - NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:8810
+    container_name: ai-native-app
+    ports:
+      - "8810:3000"
+    env_file:
+      - .env.production
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ── ngrok tunnel สำหรับ LINE webhook ตอน dev (Day 8) ──
+  # ปิดไว้ — จะใช้เมื่อเทส LINE bot บนเครื่อง (uncomment แล้วรันเฉพาะ service นี้)
+  # ⚠️ ngrok ฟรี 1 session/account — ต้อง stop n8n_ngrok_tunnel (คอร์ส Jenkins) ก่อน
+  # ⚠️ บน Podman ถ้า tunnel ต่อไม่ติด ให้เปลี่ยน host.docker.internal เป็น host.containers.internal
+  # ngrok:
+  #   container_name: ngrok_line_webhook
+  #   image: ngrok/ngrok
+  #   ports:
+  #     - "4041:4040"
+  #   environment:
+  #     - NGROK_AUTHTOKEN=${NGROK_TOKEN}
+  #   command: http host.docker.internal:3000
+  #   networks:
+  #     - app-network

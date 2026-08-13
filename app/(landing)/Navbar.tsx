@@ -11,6 +11,7 @@ const navLinks = [
     { href: "/#about", label: "About Us" },
     { href: "/#team", label: "Team" },
     { href: "/#testimonial", label: "Testimonials" },
+    { href: "/#lead", label: "Contact Us" },
 ]
 
 function Navbar() {

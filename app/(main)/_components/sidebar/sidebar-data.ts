@@ -45,17 +45,14 @@ export const sidebarData: NavSectionType[] = [
     ],
     allowedRoles: ["admin", "manager"],
   },
+
   {
     // Admin — เฉพาะ admin เท่านั้น
     title: "Admin",
     items: [
       { title: "Users", href: "/admin/users", icon: Users },
       { title: "Knowledge", href: "/admin/knowledge", icon: LibraryBig },
-      {
-        title: "LINE Groups",
-        href: "/admin/line-groups",
-        icon: MessagesSquare,
-      },
+      {title: "LINE Groups",href: "/admin/line-groups",icon: MessagesSquare,},
       { title: "Settings", href: "/admin/settings", icon: Settings },
     ],
     allowedRoles: ["admin"],

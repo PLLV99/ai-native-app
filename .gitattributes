@@ -1,0 +1,7 @@
+# เครื่องนี้ตั้ง core.autocrlf=true → git จะแปลง LF เป็น CRLF ตอน checkout
+# ไฟล์ที่ต้องรันใน container (Alpine /bin/sh) ห้ามเป็น CRLF เด็ดขาด
+# ไม่งั้น container จะตายทันทีตอน start โดยไม่มี log บอกสาเหตุ
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf

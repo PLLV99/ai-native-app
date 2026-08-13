@@ -24,6 +24,8 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  // เพิ่มโดเมนจริงตรงนี้ตอน deploy ขึ้น production domain
+  trustedOrigins: ["http://localhost:3000", "http://localhost:8810"],
   emailAndPassword: {
     enabled: true,
     // เพิ่มส่วน Reset Password ตรงนี้

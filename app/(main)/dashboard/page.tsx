@@ -1,13 +1,13 @@
+import DashboardContent from "@/app/(main)/dashboard/DashboardContent"
 import { Metadata } from "next"
-import DashboardContent from "./DashboardContent"
 
 export const metadata: Metadata = {
     title: "Dashboard",
     description:
-        "AI Native App Dashboard — A comprehensive AI system management hub. View usage statistics, manage your Knowledge Base and AI Chat, and configure the entire system all in one place.",
+        "AI Native App Dashboard — A comprehensive AI management hub. View usage statistics, manage the Knowledge Base and AI Chat, and configure all system settings in one place.",
     keywords: [
         "Dashboard",
-        "Admin Panel",
+        "Analytics",
         "AI Native App",
         "Management Hub",
         "Knowledge Base",
