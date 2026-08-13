@@ -308,38 +308,6 @@ export default function UsersManagement() {
         }
     }
 
-    // ── Role badge ───────────────────────────────────────────
-    const RoleBadge = ({ role }: { role: string }) => {
-        const colors: Record<string, string> = {
-            admin: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-            manager:
-                "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-            user: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-        }
-        const iconMap: Record<string, React.ReactNode> = {
-            admin: <ShieldAlert className="h-3 w-3" />,
-            manager: <Shield className="h-3 w-3" />,
-            user: <UserCheck className="h-3 w-3" />,
-        }
-        const roles = role.split(",").map((r) => r.trim())
-        return (
-            <div className="flex flex-wrap gap-1">
-                {roles.map((r) => (
-                    <span
-                        key={r}
-                        className={cn(
-                            "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                            colors[r] ?? "bg-gray-100 text-gray-700"
-                        )}
-                    >
-                        {iconMap[r]}
-                        {r}
-                    </span>
-                ))}
-            </div>
-        )
-    }
-
     // ── Role Checkbox Toggle ─────────────────────────────────
     const toggleRole = (role: RoleType) => {
         setFormRoles((prev) => {
@@ -351,25 +319,6 @@ export default function UsersManagement() {
             return [...prev, role]
         })
     }
-
-    const RoleCheckboxes = () => (
-        <div className="flex flex-col gap-2">
-            {ALL_ROLES.map((role) => (
-                <label
-                    key={role}
-                    className="flex items-center gap-2 cursor-pointer rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                    <input
-                        type="checkbox"
-                        checked={formRoles.includes(role)}
-                        onChange={() => toggleRole(role)}
-                        className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary accent-primary"
-                    />
-                    <RoleBadge role={role} />
-                </label>
-            ))}
-        </div>
-    )
 
     // ── Impersonation Banner ─────────────────────────────────
     // impersonatedBy is in the session object (not user)
@@ -760,7 +709,10 @@ export default function UsersManagement() {
                             <label className="mb-1.5 block text-sm font-medium text-foreground">
                                 Role (multiple selection allowed)
                             </label>
-                            <RoleCheckboxes />
+                            <RoleCheckboxes
+                                selected={formRoles}
+                                onToggle={toggleRole}
+                            />
                         </div>
                         {actionError && <ErrorMsg msg={actionError} />}
                         <ModalActions
@@ -815,7 +767,10 @@ export default function UsersManagement() {
                             <label className="mb-1.5 block text-sm font-medium text-foreground">
                                 Role (multiple selection allowed)
                             </label>
-                            <RoleCheckboxes />
+                            <RoleCheckboxes
+                                selected={formRoles}
+                                onToggle={toggleRole}
+                            />
                         </div>
                         {actionError && <ErrorMsg msg={actionError} />}
                         <ModalActions
@@ -934,6 +889,67 @@ export default function UsersManagement() {
 // ============================================================
 // Sub-components
 // ============================================================
+// ประกาศไว้นอก UsersManagement เท่านั้น — ถ้าย้ายกลับเข้าไปข้างใน
+// JS จะสร้าง function ใหม่ทุก render → React มองเป็นคนละ component
+// → unmount/mount ใหม่ทั้งก้อน (input หลุด focus, state ข้างในรีเซ็ต)
+
+function RoleBadge({ role }: { role: string }) {
+    const colors: Record<string, string> = {
+        admin: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+        manager:
+            "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+        user: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    }
+    const iconMap: Record<string, React.ReactNode> = {
+        admin: <ShieldAlert className="h-3 w-3" />,
+        manager: <Shield className="h-3 w-3" />,
+        user: <UserCheck className="h-3 w-3" />,
+    }
+    const roles = role.split(",").map((r) => r.trim())
+    return (
+        <div className="flex flex-wrap gap-1">
+            {roles.map((r) => (
+                <span
+                    key={r}
+                    className={cn(
+                        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                        colors[r] ?? "bg-gray-100 text-gray-700"
+                    )}
+                >
+                    {iconMap[r]}
+                    {r}
+                </span>
+            ))}
+        </div>
+    )
+}
+
+function RoleCheckboxes({
+    selected,
+    onToggle,
+}: {
+    selected: RoleType[]
+    onToggle: (role: RoleType) => void
+}) {
+    return (
+        <div className="flex flex-col gap-2">
+            {ALL_ROLES.map((role) => (
+                <label
+                    key={role}
+                    className="flex items-center gap-2 cursor-pointer rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                    <input
+                        type="checkbox"
+                        checked={selected.includes(role)}
+                        onChange={() => onToggle(role)}
+                        className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary accent-primary"
+                    />
+                    <RoleBadge role={role} />
+                </label>
+            ))}
+        </div>
+    )
+}
 
 function DropdownItem({
     icon: Icon,
