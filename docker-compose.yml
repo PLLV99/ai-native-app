@@ -12,6 +12,9 @@ services:
         - NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:8810
     container_name: ai-native-app
     ports:
+      # ต้องเป็น 0.0.0.0 (เขียนสั้น ๆ แบบนี้) เพราะเป็นการเปิดพอร์ต "ภายใน VM ของ Podman"
+      # ถ้าใส่ 127.0.0.1 นำหน้า พอร์ตจะอยู่แค่ loopback ของ VM แล้ว gvproxy มองไม่เห็น
+      # → เข้าจาก Windows ไม่ได้เลย (ดูการตรวจ exposure ฝั่ง Windows ในโน้ต Day 9)
       - "8810:3000"
     env_file:
       - .env.production

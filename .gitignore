@@ -53,3 +53,5 @@ pgdata/
 postgres_data/
 db_data/
 docker-compose.override.yml
+# Windows reserved device name — created accidentally by tools that redirect to NUL
+NUL
