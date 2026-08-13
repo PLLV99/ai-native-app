@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { chatSchema, validationError } from "@/lib/validations";
+import { rateLimitUser } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,11 +16,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { message, sessionId } = await request.json();
+    // Every call costs OpenAI credits. Limit per user id rather than per IP:
+    // anyone can sign up, and an IP is trivial to change.
+    const limited = await rateLimitUser(session.user.id, "ai-chat", 20, 60);
+    if (limited) return limited;
 
-    if (!message) {
-      return NextResponse.json({ error: "Missing 'message'" }, { status: 400 });
+    const parsed = chatSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(validationError(parsed.error), { status: 400 });
     }
+    const { message, sessionId } = parsed.data;
 
     // 1. ดึง Chat History จาก Database
     let history: ChatMessage[] = [];

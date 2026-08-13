@@ -40,7 +40,7 @@ importers:
         version: 9.0.3
       openai:
         specifier: ^7.0.0
-        version: 7.0.0(zod@3.25.76)
+        version: 7.0.0(zod@4.4.3)
       pdf-parse:
         specifier: ^2.4.5
         version: 2.4.5
@@ -68,6 +68,9 @@ importers:
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -7227,9 +7230,9 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  openai@7.0.0(zod@3.25.76):
+  openai@7.0.0(zod@4.4.3):
     optionalDependencies:
-      zod: 3.25.76
+      zod: 4.4.3
 
   optionator@0.9.4:
     dependencies:

@@ -3,36 +3,32 @@ import { searchDocuments } from "@/lib/vector-search"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
-import { NextRequest } from "next/server"
-
-// Simple in-memory rate limit: max 20 requests per IP per minute
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + 60_000 })
-    return true
-  }
-  if (entry.count >= 20) return false
-  entry.count++
-  return true
-}
+import { NextRequest, NextResponse } from "next/server"
+import { chatSchema, validationError } from "@/lib/validations"
+import { getClientIp, rateLimitIp, rateLimitUser } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
-  // 1. Rate limit (prevents abuse from public users)
-  const ip = request.headers.get("x-forwarded-for") ?? "unknown"
-  if (!checkRateLimit(ip)) {
-    return new Response("Too Many Requests", { status: 429 })
-  }
-
   // Check session (optional — if logged in, save history; if not, just respond)
   const session = await auth.api.getSession({
     headers: await headers(),
   }).catch(() => null)
 
-  const { message, sessionId } = await request.json()
+  // 1. Rate limit. This endpoint answers anonymous visitors too, so fall back
+  //    to IP when there is no session — but keep the anonymous budget smaller,
+  //    since an IP costs an attacker nothing to rotate.
+  //    Backed by the database, not a Map: on serverless every request can land
+  //    on a fresh instance, which would leave an in-memory counter always empty.
+  const limited = session
+    ? await rateLimitUser(session.user.id, "ai-stream", 20, 60)
+    : await rateLimitIp(request, "ai-stream-anon", 8, 60)
+  if (limited) return limited
+
+  // 2. Validate before spending any OpenAI credits on the request
+  const parsed = chatSchema.safeParse(await request.json())
+  if (!parsed.success) {
+    return NextResponse.json(validationError(parsed.error), { status: 400 })
+  }
+  const { message, sessionId } = parsed.data
 
   // 2. Retrieve Chat History from Database
   let history: { role: "user" | "assistant"; content: string }[] = []

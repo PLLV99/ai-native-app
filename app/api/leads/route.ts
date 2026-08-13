@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { pushMessageToGroup } from "@/lib/line-push";
+import { createLeadSchema, validationError } from "@/lib/validations";
+import { rateLimitIp } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, phone, company, interest } = await request.json();
+    // Rate limit — public endpoint that writes to the database and pushes a
+    // LINE message on every accepted submission.
+    const limited = await rateLimitIp(request, "leads", 5, 600);
+    if (limited) return limited;
 
-    // Validate
-    if (!name || !email) {
-      return NextResponse.json(
-        { error: "Please provide both name and email" },
-        { status: 400 },
-      );
+    // Validate: the old check only asked "is there a value?", so an object or
+    // a 10 MB string passed straight through to Prisma.
+    const parsed = createLeadSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(validationError(parsed.error), { status: 400 });
     }
+    const { name, email, phone, company, interest } = parsed.data;
 
     // 1. Save Lead to PostgreSQL via Prisma
-    const lead = await prisma.lead.create({
+    await prisma.lead.create({
       data: {
         name,
         email,

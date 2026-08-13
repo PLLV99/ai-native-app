@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { changeRoleSchema, validationError } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   // 1. ตรวจสอบว่าผู้ใช้ล็อกอินอยู่
@@ -25,23 +26,47 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 3. อ่านข้อมูลจาก request body
-  const { userId, newRole } = await request.json();
+  // 3. อ่านและ validate request body (z.enum เช็ค role ให้เอง ไม่ต้องเขียน validRoles)
+  const parsed = changeRoleSchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json(validationError(parsed.error), { status: 400 });
+  }
+  const { userId, newRole } = parsed.data;
 
-  if (!userId || !newRole) {
+  // 4. กันยิงตีนตัวเอง — ถ้า admin คนสุดท้ายลดสิทธิ์ตัวเอง จะไม่มีใครเข้า
+  //    /admin/users ได้อีกเลย และคนที่จะแต่งตั้ง admin ใหม่ก็ต้องเป็น admin
+  //    ทางออกเหลือแค่แก้ database ตรง ๆ ซึ่งบน production อาจไม่มีสิทธิ์
+  if (userId === session.user.id) {
     return NextResponse.json(
-      { error: "Missing userId or newRole" },
+      { error: "You cannot change your own role. Ask another admin to do it." },
       { status: 400 },
     );
   }
 
-  // 4. ตรวจสอบว่า role ที่ส่งมาถูกต้อง
-  const validRoles = ["user", "manager", "admin"];
-  if (!validRoles.includes(newRole)) {
-    return NextResponse.json(
-      { error: "Invalid role. Must be 'user', 'manager', or 'admin'" },
-      { status: 400 },
-    );
+  if (newRole !== "admin") {
+    const target = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    const targetIsAdmin = (target?.role ?? "")
+      .split(",")
+      .map((r) => r.trim())
+      .includes("admin");
+
+    if (targetIsAdmin) {
+      // role เก็บเป็น string เดียวคั่นด้วย comma เลยต้องนับด้วย contains
+      const adminCount = await prisma.user.count({
+        where: { role: { contains: "admin" } },
+      });
+
+      if (adminCount <= 1) {
+        return NextResponse.json(
+          { error: "The system must keep at least one admin." },
+          { status: 400 },
+        );
+      }
+    }
   }
 
   // 5. อัปเดต role ใน database

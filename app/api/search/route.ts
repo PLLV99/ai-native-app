@@ -2,6 +2,8 @@ import { searchDocuments } from "@/lib/vector-search"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { NextRequest, NextResponse } from "next/server"
+import { searchSchema, validationError } from "@/lib/validations"
+import { rateLimitUser } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,17 +17,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { query, topK = 5 } = await request.json()
+    // session guard กันคนนอกได้ แต่ใครก็สมัครได้ → ต้องมี rate limit ต่อ user ด้วย
+    const limited = await rateLimitUser(session.user.id, "ai-search", 30, 60)
+    if (limited) return limited
 
-    if (!query) {
-      return NextResponse.json(
-        { error: "Missing 'query' parameter" },
-        { status: 400 }
-      )
+    // schema clamp topK ให้อยู่ในช่วง 1-20 แล้ว (เดิมใช้ Math.min/max เขียนเอง)
+    const parsed = searchSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json(validationError(parsed.error), { status: 400 })
     }
-
-    // ⚠️ [แก้เพิ่มเอง] topK วิ่งตรงเข้า SQL LIMIT — ต้อง clamp กันคนส่ง topK: 999999
-    const safeTopK = Math.min(Math.max(Number(topK) || 5, 1), 20)
+    const { query, topK: safeTopK } = parsed.data
 
     const results = await searchDocuments(query, safeTopK)
 

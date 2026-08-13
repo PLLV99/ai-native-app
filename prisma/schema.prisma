@@ -186,11 +186,27 @@ model Lead {
 // ==========================================
 model LineGroup {
   id        String   @id @default(cuid())
-  groupId   String   @unique          // LINE Group ID (เช่น Cf224170d...)
+  groupId   String   @unique          // LINE Group ID (เช่น Cxxxxxxxx...)
   groupName String?                   // ชื่อกลุ่ม (ดึงจาก LINE API)
   active    Boolean  @default(true)   // true = ส่งแจ้งเตือน, false = หยุดส่ง
   joinedAt  DateTime @default(now())  // วันที่ Bot เข้ากลุ่ม
   updatedAt DateTime @updatedAt
 
   @@map("line_group")
+}
+
+// ==========================================
+// Rate Limiting
+// ==========================================
+// เก็บตัวนับใน database ไม่ใช่ memory เพราะ:
+//  - Vercel เป็น serverless ทุก request อาจคนละ instance -> Map ว่างตลอด
+//  - รันหลาย container ต่างคนต่างนับ ตั้ง 20 แต่รัน 3 ตัว = ได้จริง 60
+//  - restart แล้วตัวนับรีเซ็ต คนยิงแค่รอ deploy รอบหน้า
+model RateLimit {
+  key     String   @id // เช่น "contact:1.2.3.4" หรือ "ai:<userId>"
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt]) // ใช้กวาดแถวหมดอายุทิ้ง
+  @@map("rate_limit")
 }

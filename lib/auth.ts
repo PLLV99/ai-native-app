@@ -95,6 +95,19 @@ export const auth = betterAuth({
     },
   },
   appName: "AI Native App",
+  // กัน brute force รหัสผ่านและสแปมอีเมลรีเซ็ต
+  // storage: "database" ไม่ใช่ "memory" เพราะบน serverless / หลาย container
+  // ตัวนับใน memory จะแยกกันคนละ instance = ไม่มี limit จริง
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 100,
+    storage: "database",
+    customRules: {
+      "/sign-in/email": { window: 300, max: 5 },
+      "/forgot-password": { window: 900, max: 3 },
+    },
+  },
   plugins: [
     adminPlugin({
       ac,
