@@ -470,7 +470,7 @@ export default function ChatContent() {
                                         className={`text-xs mt-1.5 ${message.role === "user" ? "text-blue-200" : "text-gray-400 dark:text-gray-500"
                                             }`}
                                     >
-                                        {message.timestamp.toLocaleTimeString([], {
+                                        {message.timestamp.toLocaleTimeString("en-US", {
                                             hour: "2-digit",
                                             minute: "2-digit",
                                         })}

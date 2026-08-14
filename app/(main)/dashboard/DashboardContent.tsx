@@ -192,7 +192,7 @@ export default async function DashboardContent() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" />
-                    {new Date().toLocaleDateString("th-TH", {
+                    {new Date().toLocaleDateString("en-US", {
                         weekday: "long",
                         year: "numeric",
                         month: "long",
@@ -381,7 +381,7 @@ export default async function DashboardContent() {
                                                     )}
                                                     <span>·</span>
                                                     <span>
-                                                        {new Date(doc.createdAt).toLocaleDateString("th-TH", {
+                                                        {new Date(doc.createdAt).toLocaleDateString("en-US", {
                                                             month: "short",
                                                             day: "numeric",
                                                         })}
