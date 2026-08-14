@@ -12,9 +12,8 @@ services:
         - NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:8810
     container_name: ai-native-app
     ports:
-      # ต้องเป็น 0.0.0.0 (เขียนสั้น ๆ แบบนี้) เพราะเป็นการเปิดพอร์ต "ภายใน VM ของ Podman"
-      # ถ้าใส่ 127.0.0.1 นำหน้า พอร์ตจะอยู่แค่ loopback ของ VM แล้ว gvproxy มองไม่เห็น
-      # → เข้าจาก Windows ไม่ได้เลย (ดูการตรวจ exposure ฝั่ง Windows ในโน้ต Day 9)
+      # จงใจไม่ใส่ 127.0.0.1 นำหน้า — ปล่อยให้ bind 0.0.0.0 เพราะไฟล์นี้ใช้ได้ทั้ง
+      # Docker และ Podman ดูหมายเหตุ Podman ท้ายไฟล์ว่าทำไมถึงสำคัญตรงนั้น
       - "8810:3000"
     env_file:
       - .env.production
@@ -24,8 +23,7 @@ services:
 
   # ── ngrok tunnel สำหรับ LINE webhook ตอน dev (Day 8) ──
   # ปิดไว้ — จะใช้เมื่อเทส LINE bot บนเครื่อง (uncomment แล้วรันเฉพาะ service นี้)
-  # ⚠️ ngrok ฟรี 1 session/account — ต้อง stop n8n_ngrok_tunnel (คอร์ส Jenkins) ก่อน
-  # ⚠️ บน Podman ถ้า tunnel ต่อไม่ติด ให้เปลี่ยน host.docker.internal เป็น host.containers.internal
+  # ⚠️ ngrok ฟรี 1 session/account — ต้อง stop tunnel อื่นก่อน
   # ngrok:
   #   container_name: ngrok_line_webhook
   #   image: ngrok/ngrok
@@ -36,3 +34,20 @@ services:
   #   command: http host.docker.internal:3000
   #   networks:
   #     - app-network
+
+# ════════════════════════════════════════════════════════════════════
+# หมายเหตุ: รันด้วย Podman ก็ได้
+# ════════════════════════════════════════════════════════════════════
+# ไฟล์นี้เป็น Compose มาตรฐาน `podman compose up -d` ใช้ได้เลยไม่ต้องแก้อะไร
+# แต่มี 2 จุดที่พฤติกรรมต่างจาก Docker — เจอมาแล้วตอนทำ Day 9 จดไว้กันลืม
+#
+# 1) เข้า localhost:8810 ไม่ได้ ถ้า podman machine เป็น rootful
+#    ตัวส่งต่อพอร์ตของ Podman (gvproxy) ฟัง rootless socket พอ machine เป็น rootful
+#    พอร์ตเลยไปโผล่แค่ใน VM ไม่ทะลุออกมาถึง Windows — ต้องเข้าผ่าน IP ของ VM แทน:
+#        wsl -d podman-machine-default ip -4 addr show eth0
+#    (IP เปลี่ยนทุกครั้งที่รีสตาร์ทเครื่อง) นี่คือเหตุผลที่ ports ข้างบนต้อง bind 0.0.0.0
+#    ถ้าใส่ 127.0.0.1 นำหน้า พอร์ตจะติดอยู่แค่ loopback ของ VM มองไม่เห็นจากข้างนอกเลย
+#    บน Docker Desktop ไม่มีปัญหานี้ localhost:8810 เข้าได้ตรง ๆ
+#
+# 2) service ngrok ข้างบนใช้ host.docker.internal ซึ่งเป็นชื่อฝั่ง Docker
+#    บน Podman ต้องเปลี่ยนเป็น host.containers.internal ไม่งั้น tunnel ต่อไม่ติด
