@@ -96,12 +96,22 @@ is ignored as well. It contained a valid session token and was untracked,
 one `git add .` away from being published.
 
 `BETTER_AUTH_SECRET` signs session tokens, TOTP secrets and email
-verification tokens. Development and production use different values.
+verification tokens. Rotating it invalidates every session and makes
+existing TOTP secrets undecryptable, so an account with 2FA enabled is
+locked out until its `twoFactor` row is cleared.
 
-Development and production credentials are separated: distinct OAuth
-applications, database branches, mail accounts and API keys, so that
-testing cannot reach production data and a leaked development credential
-does not compromise the deployed system.
+**Credentials are mostly shared between environments, which is a gap.**
+GitHub is the exception — development and production use separate OAuth
+applications, so revoking the production secret does not break local
+development. Everything else (database, OpenAI key, mail account, and the
+Google, LINE and Facebook OAuth clients) is one set used by local
+development, the container, and the deployed app alike.
+
+The consequence is honest to state: a credential leaked from a developer
+machine reaches production, and testing runs against production data. The
+fix is a second set of credentials and a separate database branch per
+environment. It is listed in the known gaps below rather than described as
+done.
 
 ---
 
@@ -163,10 +173,15 @@ system holding real user data.
 | Admin cannot be prevented from every footgun | Server-side guards exist, but UI affordances lag | Guards added for self-demotion and last-admin removal |
 | No secret rotation policy | Long-lived credentials | Manual rotation only |
 | Error messages not fully normalized | Some responses differ enough to enumerate accounts | Needs an audit of every auth response path |
+| **One credential set across environments** (GitHub OAuth excepted) | A leak from a developer machine reaches production; tests run against production data | Needs a second database branch and a duplicate set of provider credentials |
+| **No error monitoring** | Production exceptions are only visible in platform logs, and nobody is watching them | Sentry is the intended fix; not wired up yet |
+| **Facebook login restricted to app roles** | Anyone without a role on the Meta app cannot use that provider | Publishing requires Meta business verification and app review |
 
 ---
 
 ## Reporting
 
-This is a personal learning project and is not deployed for public use. If
-you are reviewing it and spot something, please open an issue.
+This is a personal learning project, deployed publicly at
+https://ai-native-app-pllv99.vercel.app so it can be demonstrated. It holds
+no real user data beyond the accounts created while testing it. If you are
+reviewing it and spot something, please open an issue.

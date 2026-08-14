@@ -128,6 +128,9 @@ lib/
   vector-search.ts   cosine similarity over pgvector
   ingestion.ts       chunk and embed pipeline
 prisma/schema.prisma
+scripts/
+  ingest.ts          CLI to load documents/ into the knowledge base
+  manual/            scripts that exercise one RAG stage each — not a test suite
 ```
 
 ## Security
