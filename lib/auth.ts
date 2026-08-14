@@ -109,6 +109,11 @@ export const auth = betterAuth({
     window: 60,
     max: 100,
     storage: "database",
+    // ต้องตั้งชื่อ model ให้ Better Auth ใช้ตารางของตัวเอง — ถ้าไม่ตั้ง มันจะ default
+    // ไปใช้ชื่อ "rateLimit" ซึ่งชนกับ model RateLimit ของ lib/rate-limit.ts
+    // ที่มีฟิลด์ resetAt บังคับ แล้ว Better Auth ไม่ได้ส่งค่านั้นมา
+    // → Prisma ตีกลับ → /api/auth/* พัง 500 ทุกเส้นตั้งแต่ก่อนถึงขั้นตรวจรหัสผ่าน
+    modelName: "authRateLimit",
     customRules: {
       "/sign-in/email": { window: 300, max: 5 },
       "/forgot-password": { window: 900, max: 3 },

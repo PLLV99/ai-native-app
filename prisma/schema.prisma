@@ -202,6 +202,8 @@ model LineGroup {
 //  - Vercel เป็น serverless ทุก request อาจคนละ instance -> Map ว่างตลอด
 //  - รันหลาย container ต่างคนต่างนับ ตั้ง 20 แต่รัน 3 ตัว = ได้จริง 60
 //  - restart แล้วตัวนับรีเซ็ต คนยิงแค่รอ deploy รอบหน้า
+// ตัวที่เขียนเอง ใช้กับ endpoint ของแอป (contact / leads / chat / search)
+// lib/rate-limit.ts ยิง raw SQL ใส่ตาราง "rate_limit" ตรง ๆ ไม่ผ่าน Prisma Client
 model RateLimit {
   key     String   @id // เช่น "contact:1.2.3.4" หรือ "ai:<userId>"
   count   Int      @default(0)
@@ -209,4 +211,17 @@ model RateLimit {
 
   @@index([resetAt]) // ใช้กวาดแถวหมดอายุทิ้ง
   @@map("rate_limit")
+}
+
+// ตารางของ Better Auth เอง (rateLimit.storage = "database" ใน lib/auth.ts)
+// ต้องแยกจาก RateLimit ข้างบน เพราะคนละโครงสร้าง — Better Auth ส่ง lastRequest
+// เป็น epoch millis ไม่ได้ส่ง resetAt มา ถ้าใช้ตารางร่วมกันจะ insert ไม่ผ่าน
+// ชื่อ model ต้องตรงกับ modelName: "authRateLimit" ที่ตั้งไว้ใน lib/auth.ts
+model AuthRateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("auth_rate_limit")
 }
