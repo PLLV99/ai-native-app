@@ -24,8 +24,14 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  // เพิ่มโดเมนจริงตรงนี้ตอน deploy ขึ้น production domain
-  trustedOrigins: ["http://localhost:3000", "http://localhost:8810"],
+  // รายการขาวกัน CSRF — origin ที่ไม่อยู่ในนี้จะโดน Better Auth ปฏิเสธ
+  // ถ้าโดเมน production ไม่ได้อยู่ในรายการ /api/auth/* จะพังทั้งหมด ไม่ใช่แค่ social login
+  // ย้ายโดเมนเมื่อไหร่ต้องกลับมาแก้บรรทัดนี้ด้วย
+  trustedOrigins: [
+    "http://localhost:3000",
+    "http://localhost:8810",
+    "https://ai-native-app-pllv99.vercel.app",
+  ],
   emailAndPassword: {
     enabled: true,
     // เพิ่มส่วน Reset Password ตรงนี้
