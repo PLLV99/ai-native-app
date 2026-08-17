@@ -134,9 +134,14 @@ await prisma.$queryRaw`
 Left unbounded, a single request could ask the database for an arbitrary
 number of rows.
 
-Request bodies are validated with schemas rather than presence checks.
-`if (!name)` accepts an object, a ten megabyte string, and text that is not
-an email address.
+Request bodies on the public and metered endpoints — contact, leads, chat,
+search and role change — are validated with Zod schemas rather than
+presence checks. `if (!name)` accepts an object, a ten megabyte string, and
+text that is not an email address.
+
+The remaining handlers, all admin-or-owner only, still parse the body
+without a schema. Lower risk because a session is required to reach them,
+but not the same guarantee — extending the schemas is open work.
 
 ---
 

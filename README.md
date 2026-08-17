@@ -5,9 +5,9 @@ retrieval-augmented chatbot that answers from documents you upload.
 
 **Live demo → https://ai-native-app-pllv99.vercel.app**
 
-Sign up with email and password, or use Google or GitHub. There is no shared demo account on
-purpose — the chat endpoint costs money per request, so access is tied to an account and
-rate limited.
+Sign up with email and password, or sign in with Google, GitHub or LINE. There is no shared
+demo account on purpose — the chat endpoint costs money per request, so access is tied to an
+account and rate limited.
 
 ---
 
@@ -18,7 +18,7 @@ rate limited.
 | **Auth** | Email + password, email verification, password reset, TOTP two-factor, and social login (Google, GitHub, LINE, Facebook) |
 | **Authorization** | Three roles — `user`, `manager`, `admin` — with per-action permissions, not just a role string check |
 | **Admin** | User management (create, edit, ban, impersonate, change role), knowledge base, LINE group config |
-| **RAG chatbot** | Upload PDF/CSV/text → chunked → embedded → answers cite the retrieved context. Streaming responses. |
+| **RAG chatbot** | Upload PDF/CSV/text → chunked → embedded → answers are grounded in the retrieved chunks, which come back with the response as `sources`. Streaming replies. |
 | **Lead capture** | A form that stores to the database and pushes a LINE notification |
 | **Contact form** | Forwards to an n8n workflow (Google Sheets → LINE → Gmail) |
 
@@ -69,8 +69,8 @@ matches become the context for the answer.
 
 ## Running it locally
 
-Requires Node 22+, pnpm 11, and a PostgreSQL database with the `vector` extension
-(Neon enables it with `CREATE EXTENSION vector`).
+Built and tested against Node 22 and pnpm 11 (pinned in `packageManager`). Needs a PostgreSQL
+database with the `vector` extension — on Neon, `CREATE EXTENSION vector`.
 
 ```bash
 pnpm install
@@ -106,10 +106,12 @@ the social logins you want.
 ### Container
 
 ```bash
-podman compose up -d
+docker compose up -d
 ```
 
-A four-stage build; `entrypoint.sh` syncs the Prisma schema before the server starts.
+A four-stage build; `entrypoint.sh` syncs the Prisma schema before the server starts. The app
+is served on port 8810. Podman works too — `docker-compose.yml` notes the two places its
+behaviour differs.
 
 ## Layout
 
@@ -143,7 +145,10 @@ Short version:
 - **Rate limits live in PostgreSQL, not memory.** On serverless, an in-memory counter resets
   on every cold start and is not shared between instances, so it is not a limit at all.
   Public forms are limited per IP; endpoints that spend OpenAI credits are limited per user.
-- **Zod validates every request body** before it reaches the database or any paid API.
+- **Zod validates the public and paid endpoints** — contact, leads, chat, search and role change —
+  before anything reaches the database or a metered API. The remaining handlers are
+  admin-or-owner only and still rely on the session check plus Prisma's typing; extending the
+  schemas to cover them is open work.
 - **Admin guards** prevent an admin from demoting themselves or removing the last admin.
 - **No secrets in the repository.** `.env*` is gitignored and has never been committed.
 
